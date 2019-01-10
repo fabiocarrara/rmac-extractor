@@ -1,4 +1,4 @@
-FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
+FROM ubuntu:16.04
 # LABEL maintainer fabio.carrara@isti.cnr.it
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,7 +32,7 @@ WORKDIR $CAFFE_ROOT
 
 RUN pip install --upgrade pip && cd python && for req in $(cat requirements.txt) pydot; do python -m pip install --no-cache $req; done && cd .. && \
     mkdir build && cd build && \
-    cmake -DUSE_CUDNN=1 -DBLAS=Open .. && \
+    cmake -DCPU_ONLY=1 -DBLAS=Open .. && \
     make -j"$(nproc)"
 
 RUN python -m pip install --no-cache opencv-python dask toolz tqdm
@@ -56,4 +56,4 @@ RUN pip install tornado flask-restful
 ADD . /code
 
 ENTRYPOINT [ "python" ]
-CMD [ "service.py", "-g", "0" ]
+CMD [ "service.py" ]
