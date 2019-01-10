@@ -15,6 +15,9 @@ import urllib
 
 from extractor import RMACExtractor
 
+LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
+logging.basicConfig(format='%(message)s')
+
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
 def embed_image_html(image):
@@ -34,7 +37,10 @@ def allowed_file(filename):
     )
 
 # Obtain the flask app object
-app = flask.Flask(__name__)
+app = flask.Flask('rmac-extractor')
+
+LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
+app.logger.setLevel(LOGLEVEL)
 
 
 @app.route('/extract', methods=['POST'])
@@ -44,11 +50,11 @@ def extract_from_image():
     """
     try:
         image = Image.open(flask.request.files['image'].stream)
-        logging.info('Image: %s', image)
+        app.logger.info('Image: %s', image)
     except Exception as err:
         # For any exception we encounter in reading the image, we will just
         # not continue.
-        logging.info('URL Image open error: %s', err)
+        app.logger.info('URL Image open error: %s', err)
         return str(err), 400
 
     S = flask.request.values.getlist('s', int) if 's' in flask.request.values else (500,)
@@ -63,7 +69,7 @@ def extract_from_url():
         TODO: test features, expose multiScale, S and L
     """
     image_url = flask.request.args.get('url', '')
-    logging.info('Image: %s', image_url)
+    app.logger.info('Image: %s', image_url)
     try:
         string_buffer = StringIO.StringIO(urllib.urlopen(image_url).read())
         image = Image.open(string_buffer)
@@ -71,7 +77,7 @@ def extract_from_url():
     except Exception as err:
         # For any exception we encounter in reading the image, we will just
         # not continue.
-        logging.info('URL Image open error: %s', err)
+        app.logger.info('URL Image open error: %s', err)
         return str(err), 400
 
     S = flask.request.args.getlist('s', int) if 's' in flask.request.args else (500,)
@@ -83,7 +89,7 @@ def extract_from_url():
 def start_tornado(app, port=5000):
     http_server = tornado.httpserver.HTTPServer(tornado.wsgi.WSGIContainer(app))
     http_server.listen(port)
-    print("Tornado server starting on port {}".format(port))
+    app.logger.info("Tornado server starting on port {}".format(port))
     tornado.ioloop.IOLoop.instance().start()
 
 
@@ -97,6 +103,8 @@ def start_from_terminal(app):
     parser.add_argument('-g', '--gpu', help="which gpu to use (-1 for cpu)", type=int, default=-1)
 
     args = parser.parse_args()
+    device = 'GPU {}'.format(args.gpu) if args.gpu >= 0 else 'CPU'
+    app.logger.info('Initializing RMAC Extractor on {}'.format(device))
     app.extractor = RMACExtractor(args.gpu)
 
     if args.debug:
@@ -106,5 +114,4 @@ def start_from_terminal(app):
 
 
 if __name__ == '__main__':
-    logging.getLogger().setLevel(logging.INFO)
     start_from_terminal(app)
