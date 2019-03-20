@@ -107,18 +107,18 @@ class RMACExtractor:
         
 
     def prepare_image(self, im, S):
-        # Get aspect ratioand resize such as the largest side equals S
+        # Get aspect ratio and resize such as the largest side equals S
         im_size_hw = np.array(im.shape[0:2])
         ratio = float(S) / np.max(im_size_hw)
         new_size = tuple(np.round(im_size_hw * ratio).astype(np.int32))
         I = cv2.resize(im, (new_size[1], new_size[0]))
         # Transpose for network and subtract mean
         I = I.transpose(2, 0, 1) - self.means
-        return I    
+        return I
 
 
     def load_and_prepare_image(self, fname, S):
-        im = cv2.imread(fname)  # Read image
+        im = cv2.imread(fname, 1)  # Read image always as 3-channel BGR
         I = self.prepare_image(im, S)
         return I
         
@@ -144,7 +144,7 @@ class RMACExtractor:
         return features_dataset
 
     def extract_from_pil(self, pil_img, S=550, L=2):
-        pil_img.convert('RGB')
+        pil_img = pil_img.convert('RGB')
         img = np.array(pil_img)[:, :, ::-1]  # RGB -> BGR
         img = self.prepare_image(img, S)
 
