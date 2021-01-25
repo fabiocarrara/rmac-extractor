@@ -146,6 +146,9 @@ class RMACExtractor:
     def extract_from_pil(self, pil_img, S=550, L=2):
         pil_img = pil_img.convert('RGB')
         img = np.array(pil_img)[:, :, ::-1]  # RGB -> BGR
+        return self.extract_from_np(img, S=S, L=L)
+
+    def extract_from_np(self, img, S=550, L=2):
         img = self.prepare_image(img, S)
 
         # print 'Reshaping net...'
@@ -161,7 +164,7 @@ class RMACExtractor:
         self.net.blobs['data'].data[:] = img
         self.net.forward(end='rmac/normalized')
         
-        return np.squeeze(self.net.blobs['rmac/normalized'].data)
+        return np.squeeze(self.net.blobs['rmac/normalized'].data).copy()
 
 
     def extract_from_image(self, img, L):
