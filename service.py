@@ -1,3 +1,4 @@
+import cv2
 import os
 import time
 import cPickle
@@ -49,8 +50,11 @@ def extract_from_image():
         TODO: test features, expose multiScale, S and L
     """
     try:
-        image = Image.open(flask.request.files['image'].stream)
+        byte_array = np.fromstring(flask.request.files['image'].read(), dtype=np.uint8)
+        image = cv2.imdecode(byte_array, 1)
         app.logger.info('Image: %s', image)
+        if image is None:
+            raise Exception('imdecode failed')
     except Exception as err:
         # For any exception we encounter in reading the image, we will just
         # not continue.
@@ -58,7 +62,7 @@ def extract_from_image():
         return str(err), 400
 
     S = flask.request.values.getlist('s', int) if 's' in flask.request.values else (500,)
-    features = np.stack([app.extractor.extract_from_pil(image, S=s) for s in S]).sum(axis=0)
+    features = np.stack([app.extractor.extract_from_np(image, S=s) for s in S]).sum(axis=0)
     features = features / np.linalg.norm(features)
     return flask.jsonify(features.tolist())
 
@@ -71,9 +75,10 @@ def extract_from_url():
     image_url = flask.request.args.get('url', '')
     app.logger.info('Image: %s', image_url)
     try:
-        string_buffer = StringIO.StringIO(urllib.urlopen(image_url).read())
-        image = Image.open(string_buffer)
-
+        byte_array = np.fromstring(urllib.urlopen(image_url).read(), dtype=np.uint8)
+        image = cv2.imdecode(byte_array, 1)
+        if image is None:
+            raise Exception('imdecode failed')
     except Exception as err:
         # For any exception we encounter in reading the image, we will just
         # not continue.
@@ -81,7 +86,7 @@ def extract_from_url():
         return str(err), 400
 
     S = flask.request.args.getlist('s', int) if 's' in flask.request.args else (500,)
-    features = np.stack([app.extractor.extract_from_pil(image, S=s) for s in S]).sum(axis=0)
+    features = np.stack([app.extractor.extract_from_np(image, S=s) for s in S]).sum(axis=0)
     features = features / np.linalg.norm(features)
     return flask.jsonify(features.tolist())
 
