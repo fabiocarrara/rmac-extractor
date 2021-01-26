@@ -181,7 +181,7 @@ class RMACExtractor:
         self.net.blobs['data'].data[:] = img
         self.net.forward(end='rmac/normalized')
         
-        return np.squeeze(self.net.blobs['rmac/normalized'].data)
+        return np.squeeze(self.net.blobs['rmac/normalized'].data).copy()
 
 
 if __name__ == '__main__':
