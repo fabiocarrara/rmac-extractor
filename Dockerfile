@@ -30,12 +30,12 @@ RUN mkdir -p $CAFFE_ROOT && cd $CAFFE_ROOT && \
     git fetch origin pull/4163/head:pr4163 && git checkout pr4163    
 WORKDIR $CAFFE_ROOT
 
-RUN pip install --upgrade pip && cd python && for req in $(cat requirements.txt) pydot; do python -m pip install --no-cache $req; done && cd .. && \
+RUN pip install pip==20.3 && cd python && for req in $(cat requirements.txt) pydot; do python -m pip install --no-cache $req; done && cd .. && \
     mkdir build && cd build && \
     cmake -DCPU_ONLY=1 -DBLAS=Open .. && \
     make -j"$(nproc)"
 
-RUN python -m pip install --no-cache opencv-python dask toolz tqdm
+RUN python -m pip install --no-cache opencv-python==4.0.0.21 dask toolz tqdm
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
 ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
